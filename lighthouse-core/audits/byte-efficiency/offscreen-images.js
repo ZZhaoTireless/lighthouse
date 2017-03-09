@@ -26,6 +26,7 @@ const ALLOWABLE_OFFSCREEN_X = 100;
 const ALLOWABLE_OFFSCREEN_Y = 200;
 
 const IGNORE_THRESHOLD_IN_BYTES = 2048;
+const IGNORE_THRESHOLD_IN_PERCENT = 75;
 
 class OffscreenImages extends Audit {
   /**
@@ -109,7 +110,7 @@ class OffscreenImages extends Audit {
         return results;
       }
 
-      // Don't warn about an image that was also used appropriately
+      // If an image was used more than once, warn only about its least wasteful usage
       const existing = results.get(processed.preview.url);
       if (!existing || existing.wastedBytes > processed.wastedBytes) {
         results.set(processed.preview.url, processed);
@@ -119,7 +120,14 @@ class OffscreenImages extends Audit {
     }, new Map());
 
     const results = Array.from(resultsMap.values())
-        .filter(item => item.wastedBytes > IGNORE_THRESHOLD_IN_BYTES);
+        .filter(item => {
+          const isWasteful = item.wastedBytes > IGNORE_THRESHOLD_IN_BYTES &&
+              item.wastedPercent > IGNORE_THRESHOLD_IN_PERCENT;
+          // TODO: only warn for images that weren't lazily loaded
+          // const loadedEarly = item.requestStartTime < artifacts.timeToInteractive;
+
+          return isWasteful;
+        });
     return {
       debugString,
       results,

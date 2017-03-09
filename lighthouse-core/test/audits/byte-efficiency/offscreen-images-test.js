@@ -51,7 +51,7 @@ function generateImage(size, coords, networkRecord, src = 'https://google.com/lo
   return image;
 }
 
-describe('UnusedImages audit', () => {
+describe('OffscreenImages audit', () => {
   const DEFAULT_DIMENSIONS = {innerWidth: 1920, innerHeight: 1080};
 
   it('handles images without network record', () => {
@@ -93,14 +93,12 @@ describe('UnusedImages audit', () => {
         generateImage(generateSize(100, 100), [-2000, -1000], generateRecord(100), url('C')),
         // offscreen to the bottom-right
         generateImage(generateSize(100, 100), [3000, 2000], generateRecord(100), url('D')),
-        // half offscreen to the top
+        // half offscreen to the top, should not warn
         generateImage(generateSize(1000, 1000), [0, -500], generateRecord(100), url('E')),
       ],
     });
 
-    assert.equal(auditResult.results.length, 5);
-    const wasted = auditResult.results[4].wastedBytes;
-    assert.ok(wasted < 100 * 1024 * 0.5, 'computes wastedBytes by ratio offscreen');
+    assert.equal(auditResult.results.length, 4);
   });
 
   it('de-dupes images', () => {

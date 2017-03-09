@@ -26,7 +26,6 @@ function getViewportDimensions() {
   // window.outerWidth to get the size of the visible area
   // window.devicePixelRatio to get ratio of logical pixels to physical pixels
   return Promise.resolve({
-    scrollPosition: {x: window.scrollX, y: window.scrollY},
     innerWidth: window.innerWidth,
     innerHeight: window.innerHeight,
     outerWidth: window.outerWidth,
@@ -46,17 +45,14 @@ class ViewportDimensions extends Gatherer {
 
     return driver.evaluateAsync(`(${getViewportDimensions.toString()}())`)
 
-    .then(returnedValue => {
-      if (!Number.isFinite(returnedValue.innerWidth) ||
-          !Number.isFinite(returnedValue.innerHeight) ||
-          !Number.isFinite(returnedValue.outerWidth) ||
-          !Number.isFinite(returnedValue.outerHeight) ||
-          !Number.isFinite(returnedValue.devicePixelRatio)) {
-        const results = JSON.stringify(returnedValue);
+    .then(dimensions => {
+      const allNumeric = Object.keys(dimensions).every(key => Number.isFinite(dimensions[key]));
+      if (!allNumeric) {
+        const results = JSON.stringify(dimensions);
         throw new Error(`ViewportDimensions results were not numeric: ${results}`);
       }
 
-      return returnedValue;
+      return dimensions;
     });
   }
 }
