@@ -23,11 +23,11 @@
 
 const Gatherer = require('./gatherer');
 
-/* global document, Image */
+/* global window, document, Image */
 
 /* istanbul ignore next */
 function collectImageElementInfo() {
-  return [...document.querySelectorAll('img')].map(element => {
+  const htmlImages = [...document.querySelectorAll('img')].map(element => {
     return {
       // currentSrc used over src to get the url as determined by the browser
       // after taking into account srcset/media/sizes/etc.
@@ -36,9 +36,45 @@ function collectImageElementInfo() {
       clientHeight: element.clientHeight,
       naturalWidth: element.naturalWidth,
       naturalHeight: element.naturalHeight,
+      isCss: false,
       isPicture: element.parentElement.tagName === 'PICTURE',
     };
   });
+
+  // Only match basic background-image: url("http://host/image.jpeg") declarations
+  const ALLOWED_IMAGE = /^\s*url\("([^"]+)"\)\s*$/;
+  // Only find images that aren't specifically scaled
+  const ALLOWED_SIZE = /(auto|contain|cover)/;
+  const cssImages = [...document.querySelectorAll('*')].reduce((images, element) => {
+    const style = window.getComputedStyle(element);
+    if (!ALLOWED_IMAGE.test(style.backgroundImage) ||
+        !ALLOWED_SIZE.test(style.backgroundSize)) {
+      return images;
+    }
+
+    const imageMatch = style.backgroundImage.match(ALLOWED_IMAGE);
+    const url = imageMatch[1];
+
+    // Heuristic to filter out sprite sheets
+    const differentImages = images.filter(image => image.src !== url);
+    if (images.length - differentImages.length > 2) {
+      return differentImages;
+    }
+
+    images.push({
+      src: url,
+      clientWidth: element.clientWidth,
+      clientHeight: element.clientHeight,
+      naturalWidth: Number.MAX_VALUE,
+      naturalHeight: Number.MAX_VALUE,
+      isCss: true,
+      isPicture: false,
+    });
+
+    return images;
+  }, []);
+
+  return htmlImages.concat(cssImages);
 }
 
 /* istanbul ignore next */
@@ -95,9 +131,10 @@ class ImageUsage extends Gatherer {
             // link up the image with its network record
             element.networkRecord = indexedNetworkRecords[element.src];
 
-            // Images within `picture` behave strangely and natural size information
-            // isn't accurate. Try to get the actual size if we can.
-            const elementPromise = element.isPicture && element.networkRecord ?
+            // Images within `picture` behave strangely and natural size information isn't accurate,
+            // CSS images have no natural size information at all.
+            // Try to get the actual size if we can.
+            const elementPromise = (element.isPicture || element.isCss) && element.networkRecord ?
                 this.fetchElementWithSizeInformation(element) :
                 Promise.resolve(element);
 

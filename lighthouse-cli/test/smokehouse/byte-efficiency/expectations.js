@@ -39,7 +39,7 @@ module.exports = [
         extendedInfo: {
           value: {
             results: {
-              length: 4
+              length: 5
             }
           }
         }
@@ -49,7 +49,7 @@ module.exports = [
         extendedInfo: {
           value: {
             results: {
-              length: 2
+              length: 3
             }
           }
         }

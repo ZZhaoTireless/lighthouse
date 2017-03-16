@@ -86,6 +86,17 @@ function generateInlineScriptWithSize(sizeInBytes, firstContent = '', used = fal
   <!-- PASS(optimized): image has insignificant WebP savings -->
   <!-- PASS(responsive): image is used at full size -->
   <img src="lighthouse-320x212-poor.jpg?duplicate">
+
+  <!-- PASS(optimized): image is WebP -->
+  <!-- FAIL(responsive): image is used at 1/16 size -->
+  <div style="width: 120px; height: 80px; background: 50% 50% url(lighthouse-480x320.webp?css);"></div>
+
+  <!-- PASSWARN(optimized): image is JPEG optimized but not WebP -->
+  <!-- PASS(responsive): image is used numerous times in sprite-fashion -->
+  <div style="width: 30px; height: 30px; background: 0% 50% url(lighthouse-480x320.jpg?sprite);"></div>
+  <div style="width: 30px; height: 30px; background: 25% 50% url(lighthouse-480x320.jpg?sprite);"></div>
+  <div style="width: 30px; height: 30px; background: 50% 50% url(lighthouse-480x320.jpg?sprite);"></div>
+  <div style="width: 30px; height: 30px; background: 75% 50% url(lighthouse-480x320.jpg?sprite);"></div>
 </div>
 
 <script>
